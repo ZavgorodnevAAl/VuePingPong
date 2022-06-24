@@ -8,8 +8,8 @@ const Socketio = require("socket.io")(Http, {
 });
 
 var position = {
-    player1pos: 0,
-    player2pos: 0
+    player1pos: 15,
+    player2pos: 15
 };
 
 var ballPosition = {
@@ -17,7 +17,7 @@ var ballPosition = {
     y: 4,
 };
 
-var alpha = 45, speed = 0, width = 20, area_height = 10, wins = {p1: 0, p2: 0};
+var alpha = 45, speed = 0, width = 20, area_height = 10.3, wins = {p1: 0, p2: 0};
 
 Http.listen(3000, () => {
     console.log("Listening at :3000...");
@@ -98,7 +98,7 @@ function updatePositionBall() {
     let newLeft = ballPosition.x + Math.cos(alpha * Math.PI / 180) * speed / 30;
     let newTop = ballPosition.y + Math.sin(alpha * Math.PI / 180) * speed / 30;
 
-    let player_size = 30 * width / 100;
+    let player_size = 30 * width / (100 - width);
     let ball_size = player_size / 4;
 
     if (newTop < -0.3){
@@ -106,16 +106,25 @@ function updatePositionBall() {
         restart_position();
         newLeft = 15;
         newTop = 4;
+        ballPosition.x = newLeft;
+        ballPosition.y = newTop;
+        Socketio.emit("ballPosition", ballPosition);
+        return;
     }
     if (newTop + ball_size > area_height + 0.3){
         wins.p1++;
         restart_position();
         newLeft = 15;
         newTop = 4;
+        ballPosition.x = newLeft;
+        ballPosition.y = newTop;
+        Socketio.emit("ballPosition", ballPosition);
+        return;
     }
     if (newLeft < 0 || newLeft > 30){
         alpha = 180 - alpha;
     }
+    Socketio.emit('test1', area_height - ball_size);
     if (newTop + ball_size > area_height){
         if (position.player2pos + player_size > newLeft &&
             position.player2pos < newLeft + ball_size){
@@ -129,13 +138,15 @@ function updatePositionBall() {
         }
     }
     //console.log(this.alpha)
+    newLeft = ballPosition.x + Math.cos(alpha * Math.PI / 180) * speed / 30;
+    newTop = ballPosition.y + Math.sin(alpha * Math.PI / 180) * speed / 30;
     ballPosition.x = newLeft;
     ballPosition.y = newTop;
     Socketio.emit("ballPosition", ballPosition);
 }
 
 function restart() {
-    position.player1pos = position.player2pos = 0;
+    position.player1pos = position.player2pos = 15;
     Socketio.emit("position", position);
     player1 = player2 = null;
     Socketio.emit("updateId", {'p1': player1, 'p2': player2});
@@ -143,19 +154,19 @@ function restart() {
     speed = 0;
     ballPosition.x = 15;
     ballPosition.y = 4;
-    alpha = Math.random() * 360;
+    alpha = 45 + Math.random() * 90 + 180 * (Math.random() > 0.5);
     Socketio.emit("ballPosition", ballPosition);
     wins.p1 = wins.p2 = 0;
     Socketio.emit("WinsUpdate", wins);
     console.log("restart");
 }
 function restart_position() {
-    position.player1pos = position.player2pos = 0;
+    position.player1pos = position.player2pos = 15;
     Socketio.emit("position", position)
     speed = 0;
     ballPosition.x = 15;
     ballPosition.y = 4;
-    alpha = Math.random() * 360;
+    alpha = 45 + Math.random() * 90 + 180 * (Math.random() > 0.5);
     Socketio.emit("ballPosition", ballPosition);
     Socketio.emit("WinsUpdate", wins);
 }
